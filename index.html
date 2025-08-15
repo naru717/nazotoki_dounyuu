@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>とうせいの謎</title>
+<style>
+  :root{
+    --bg:#fff7fb; --card:#ffffff; --text:#2a2a2a; --muted:#6b7280;
+    --accent:#ff7ac6; --ok:#16a34a; --ng:#ef4444; --ring:#ffd5ec;
+    --gold:#ffcc66; --spark:#fff2a8;
+  }
+  html,body{height:100%}
+  body{
+    margin:0; background:linear-gradient(180deg,#fff7fb 0%, #f5fbff 100%);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:900px; margin:0 auto; padding:20px 16px 64px;}
+  header{display:flex; align-items:center; gap:12px; margin:6px 0 10px;}
+  header h1{font-size:26px; margin:0;}
+  .mascot{width:40px; height:40px; border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,.08);}
+  .card{background:var(--card); border-radius:20px; box-shadow:0 10px 24px rgba(255,122,198,.15);
+        padding:18px; margin:14px 0; border:2px solid var(--ring);}
+  .question{font-size:20px; font-weight:700; margin:8px 0 4px;}
+  .lead{color:var(--muted); margin-top:2px;}
+  .choices{display:grid; gap:10px; margin-top:12px;}
+  .choice-btn{width:100%; text-align:left; padding:14px 16px; border-radius:16px; border:2px solid #e7f2ff; background:#fff; cursor:pointer; font-size:16px;}
+  .choice-btn:hover{border-color:#cfe7ff; background:#f7fbff;}
+  .result{margin-top:10px; font-weight:800; font-size:18px;}
+  .ok{color:var(--ok);} .ng{color:var(--ng);}
+  .subtitle{font-weight:800; color:#1f2937; margin:6px 0 10px; font-size:18px;}
+  .muted-box{background:#fff5fa; border:2px dashed #ffd2ea; padding:10px 12px; border-radius:14px; color:#374151;}
+  .explain{margin-top:12px; text-align:left; background:#f7fbff; border:2px solid #dbeafe; border-radius:14px; padding:12px;}
+  .fade{animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
+  @media (max-width:560px){
+    header h1{font-size:22px}
+    .question{font-size:18px}
+    .choice-btn{font-size:15px; padding:14px}
+    .btn{width:100%}
+  }
+
+  /* ボタン */
+  .btn{
+    display:inline-block; padding:14px 18px; border-radius:16px; border:none; cursor:pointer; font-size:16px;
+    background:linear-gradient(90deg,var(--accent),#ffa7d8); color:#fff; box-shadow:0 8px 18px rgba(255,122,198,.35);
+  }
+  .btn:disabled{opacity:.6; cursor:not-allowed;}
+  .btn.alt{background:linear-gradient(90deg,#8ec5ff,#b5e1ff);}
+
+  /* 入力フォーム（縦並び） */
+  .form-vertical{display:flex; flex-direction:column; gap:12px;}
+  label{font-size:14px; color:var(--muted); margin-bottom:6px;}
+  input{
+    width:100%; padding:14px 14px; font-size:16px; border-radius:14px; border:2px solid #ffdff0; background:#fff; outline:none;
+  }
+  input:focus{border-color:#ffb3dc; box-shadow:0 0 0 4px #ffe6f4;}
+
+  /* ヒーロー（紹介） */
+  .hero{
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px;
+  }
+  .hero img{ width:min(68vw, 300px); height:auto; border-radius:24px; box-shadow:0 10px 26px rgba(0,0,0,.12); }
+  .speech{
+    background:#ffffff; border:2px solid #ffd5ec; border-radius:18px; padding:12px 14px; line-height:1.7;
+    position:relative; max-width:680px;
+  }
+  .speech:after{
+    content:""; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    border:10px solid transparent; border-top-color:#ffd5ec;
+  }
+  .speech:before{
+    content:""; position:absolute; top:calc(100% + 2px); left:50%; transform:translateX(-50%);
+    border:10px solid transparent; border-top-color:#ffffff;
+  }
+
+  /* 正解スタンプ */
+  .stamp{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(255,255,255,.75); z-index:50;}
+  .stamp img{width:min(70vw,380px); height:auto; filter:drop-shadow(0 10px 24px rgba(0,0,0,.2)); animation:pop .5s ease;}
+  @keyframes pop{0%{transform:scale(.6) rotate(-6deg); opacity:0}60%{transform:scale(1.05) rotate(2deg); opacity:1}100%{transform:scale(1) rotate(0)}}
+
+  /* ===== エンディング豪華版 ===== */
+  #screen-ending{ position:relative; overflow:hidden; }
+  .ending-wrap{ display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; }
+  .ending-hero{
+    width:min(80vw, 420px); height:auto;
+    border-radius:28px; box-shadow:0 18px 40px rgba(255,122,198,.35);
+    outline:6px solid rgba(255, 213, 236, .6);
+  }
+  .ending-title{
+    font-size:24px; font-weight:900; letter-spacing:.02em;
+    background:linear-gradient(90deg,#ff7ac6,#ffcc66); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .ending-lines{
+    line-height:1.9; font-size:16px; color:#374151;
+    background:#fffef3; border:2px solid #ffefb6; border-radius:16px; padding:10px 14px;
+  }
+  .ending-badge{
+    display:inline-block; padding:8px 12px; border-radius:999px;
+    background:linear-gradient(90deg,#ffd591,#ffe9b6); color:#6b4000; font-weight:800; font-size:13px;
+    border:1px solid #f6c66f; box-shadow:0 6px 16px rgba(255,204,102,.35);
+  }
+  .ending-actions{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; justify-content:center; }
+  .btn.ghost{
+    background:#fff; color:#ff4fae; border:2px solid #ffb4df; box-shadow:none;
+  }
+
+  /* 紙吹雪 */
+  .confetti{ pointer-events:none; position:absolute; inset:0; overflow:hidden; }
+  .confetti span{
+    position:absolute; top:-10px; width:10px; height:16px; opacity:.9;
+    animation:fall 2.8s linear forwards; transform:rotate(0deg);
+  }
+  @keyframes fall{
+    0%{ transform:translateY(-10px) rotate(0deg); }
+    100%{ transform:translateY(120vh) rotate(540deg); }
+  }
+  /* キラキラ */
+  .sparkles{ pointer-events:none; position:absolute; inset:0; }
+  .spark{
+    position:absolute; width:10px; height:10px; background:radial-gradient(circle, var(--spark) 0%, rgba(255,255,255,0) 70%);
+    animation:blink 1.6s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:0.2} 50%{opacity:1} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="mame.png" alt="まめマスコット" class="mascot" />
+      <h1>🎯 とうせいの謎</h1>
+    </header>
+
+    <!-- 入力画面（縦構成＋紹介を上に） -->
+    <section id="screen-intro" class="card fade">
+      <div class="hero">
+        <img src="mame.png" alt="とせいくん" />
+        <div class="speech">
+          <strong>ぼくは とせいくん。</strong><br>
+          専門・認定看護師会の <strong>謎解き係</strong> だ！<br>
+          名探偵を探しています。<br>
+          <strong>あなたのこと、教えて！</strong>
+        </div>
+      </div>
+
+      <div style="height:8px;"></div>
+
+      <div class="form-vertical">
+        <div>
+          <label for="name">名前</label>
+          <input id="name" type="text" placeholder="例）まめお" />
+        </div>
+        <div>
+          <label for="group">所属</label>
+          <input id="group" type="text" placeholder="例）外来／病棟／リハ など" />
+        </div>
+        <div>
+          <label for="job">職種</label>
+          <input id="job" type="text" placeholder="例）看護師／医師／薬剤師 など" />
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <button class="btn" id="go-pre">次へ</button>
+      </div>
+    </section>
+
+    <!-- 診断スタート画面（導入文：ワクワク版） -->
+    <section id="screen-pre" class="card fade" style="display:none;">
+      <div id="pre-title" class="subtitle"></div>
+      <div class="muted-box" style="margin:10px 0 14px;">
+        🔍 <strong>あなたはどんなタイプの名探偵？</strong><br/>
+        謎解きのカギは、まず自分の<strong>“探偵スキル”</strong>を知ること！<br/>
+        直感で選んだ答えが、あなたの推理スタイルを暴き出す…。<br/>
+        さあ、<strong>名探偵診断</strong>を始めよう！
+      </div>
+      <button class="btn alt" id="begin-diag">診断をはじめる</button>
+    </section>
+
+    <!-- 診断（3問） -->
+    <section id="screen-diag" class="card fade" style="display:none;">
+      <div class="question" id="diag-q"></div>
+      <div class="choices" id="diag-choices"></div>
+      <div class="lead" id="diag-progress" style="margin-top:8px;"></div>
+    </section>
+
+    <!-- 診断結果 -->
+    <section id="screen-diag-result" class="card fade" style="display:none;">
+      <div id="type-title" class="question"></div>
+      <div id="type-copy" class="lead"></div>
+      <ul id="type-desc" style="text-align:left; line-height:1.8;"></ul>
+      <div class="muted-box" style="margin-top:12px;">
+        あなたの探偵タイプが決まりました！<br/>
+        では、その個性を活かして<strong>とうせいの謎</strong>に挑みましょう…。
+      </div>
+      <button class="btn" id="to-quiz" style="margin-top:14px;">第1問へ進む</button>
+    </section>
+
+    <!-- 本編Q1〜Q3（説明 → 画像 → 選択肢 → 正誤・解説 → 次へ） -->
+    <section id="screen-quiz" class="card fade" style="display:none;">
+      <!-- 説明文 -->
+      <div id="story" class="lead" style="margin-bottom:8px;"></div>
+
+      <!-- 問題画像 -->
+      <div style="text-align:center; margin:10px 0;">
+        <img id="quiz-img" src="" alt="謎の画像" style="max-width:100%; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" />
+      </div>
+
+      <!-- 問題文 -->
+      <div id="q-title" class="question"></div>
+
+      <!-- 選択肢 -->
+      <div id="choices" class="choices"></div>
+
+      <!-- 正誤表示 -->
+      <div id="judge" class="result"></div>
+
+      <!-- 解説 -->
+      <div id="explain" class="explain" style="display:none;"></div>
+
+      <!-- 次へボタン -->
+      <div id="next-area" style="display:none; margin-top:12px;">
+        <button id="next-btn" class="btn">次へ</button>
+      </div>
+    </section>
+
+    <!-- エンディング（豪華版・名前入りメッセージ＋とせいくん拡大＋紙吹雪/スパークル） -->
+    <section id="screen-ending" class="card fade" style="display:none;">
+      <div class="ending-wrap">
+        <div class="ending-title">🎉 クリアおめでとう！</div>
+        <img src="mame.png" alt="とせいくん" class="ending-hero" />
+        <div class="ending-lines">
+          <div class="ending-badge">とうせいの謎・名探偵認定</div>
+          <div id="ending-text" style="margin-top:6px;"></div>
+          <div style="margin-top:6px;">
+            12月は <strong>TMC（とうせいメディカルカップ）</strong> に注目だ！！🏆✨
+          </div>
+        </div>
+        <div class="ending-actions">
+          <button class="btn" id="replay-btn">もう一度あそぶ</button>
+        </div>
+      </div>
+      <div class="confetti" id="confetti"></div>
+      <div class="sparkles" id="sparkles"></div>
+    </section>
+  </div>
+
+  <!-- 正解スタンプ -->
+  <div id="stamp" class="stamp" aria-hidden="true">
+    <img src="nazotoki2.png" alt="正解スタンプ" />
+  </div>
+
+  <!-- サウンド -->
+  <audio id="bgm" src="nazotoki.mp3" preload="none" loop></audio>
+  <audio id="seClick" src="pochi.mp3" preload="auto"></audio>
+  <audio id="seCorrect" src="pinpon.mp3" preload="auto"></audio>
+
+<script>
+  // ===== DOM =====
+  const nameEl  = document.getElementById('name');
+  const screenIntro = document.getElementById('screen-intro');
+  const screenPre   = document.getElementById('screen-pre');
+  const screenDiag  = document.getElementById('screen-diag');
+  const screenDiagResult = document.getElementById('screen-diag-result');
+  const screenQuiz  = document.getElementById('screen-quiz');
+  const screenEnding= document.getElementById('screen-ending');
+  const preTitle = document.getElementById('pre-title');
+  const stampEl = document.getElementById('stamp');
+
+  const diagQEl = document.getElementById('diag-q');
+  const diagChoicesEl = document.getElementById('diag-choices');
+  const diagProgEl = document.getElementById('diag-progress');
+
+  const storyEl = document.getElementById('story');
+  const qTitleEl = document.getElementById('q-title');
+  const choicesEl = document.getElementById('choices');
+  const judgeEl = document.getElementById('judge');
+  const explainEl = document.getElementById('explain');
+  const nextArea = document.getElementById('next-area');
+  const nextBtn  = document.getElementById('next-btn');
+  const endingText = document.getElementById('ending-text');
+  const quizImgEl = document.getElementById('quiz-img');
+  const confettiEl = document.getElementById('confetti');
+  const sparklesEl = document.getElementById('sparkles');
+  const replayBtn = document.getElementById('replay-btn');
+
+  // ===== Sound =====
+  const bgm = document.getElementById('bgm');
+  const seClick = document.getElementById('seClick');
+  const seCorrect = document.getElementById('seCorrect');
+  let bgmStarted = false;
+
+  function playClick(){ try{ seClick.currentTime = 0; seClick.play(); }catch{} }
+  function playCorrect(){ try{ seCorrect.currentTime = 0; seCorrect.play(); }catch{} }
+  function ensureBGM(){
+    if(!bgmStarted){
+      bgmStarted = true;
+      try{ bgm.volume = 0.8; bgm.play(); }catch{}
+    }
+  }
+
+  // すべてのボタンでクリック音
+  document.addEventListener('click',(e)=>{
+    if(e.target.closest('button')) playClick();
+  }, true);
+
+  // 画面切替
+  function hideAll(){ [screenIntro,screenPre,screenDiag,screenDiagResult,screenQuiz,screenEnding].forEach(el=>el.style.display='none'); }
+  function show(el){ hideAll(); el.style.display='block'; window.scrollTo({top:0, behavior:'smooth'}); }
+  show(screenIntro);
+
+  // Intro -> Pre
+  document.getElementById('go-pre').addEventListener('click', ()=>{
+    if(!nameEl.value.trim()){ nameEl.focus(); nameEl.style.borderColor='#ff8dc7'; return; }
+    nameEl.style.borderColor='#ffdff0';
+    preTitle.textContent = `とうせいの謎に迫る${nameEl.value}探偵「あなたはどんなタイプの名探偵？」`;
+    show(screenPre);
+  });
+
+  // Pre -> Diagnosis
+  document.getElementById('begin-diag').addEventListener('click', ()=>{
+    ensureBGM();
+    diagIndex = 0; diagCounts = {A:0,B:0,C:0}; lastPick = null;
+    renderDiag(); show(screenDiag);
+  });
+
+  // ===== 診断 =====
+  const diagData = [
+    { q:"質問1｜朝起きて最初にすることは？",
+      choices:[ {label:"A：コーヒーを飲む ☕ → 冷静分析型",type:"A"},
+                {label:"B：携帯をチェック 📱 → 情報収集型",type:"B"},
+                {label:"C：二度寝 😴 → マイペース型",type:"C"} ]},
+    { q:"質問2｜事件の現場に着きました。最初にすることは？",
+      choices:[ {label:"A：全体を見渡しメモを取る 📓 → 冷静分析型",type:"A"},
+                {label:"B：周囲の人に話を聞く 👂 → 情報収集型",type:"B"},
+                {label:"C：とりあえずおやつを食べる 🍪 → マイペース型",type:"C"} ]},
+    { q:"質問3｜謎の暗号文を発見！あなたは…",
+      choices:[ {label:"A：紙と鉛筆でじっくり解析 ✏️ → 冷静分析型",type:"A"},
+                {label:"B：ネットやSNSで似たものを探す 🌐 → 情報収集型",type:"B"},
+                {label:"C：暗号をインテリアとして飾る 🖼 → マイペース型",type:"C"} ]}
+  ];
+  let diagIndex=0, diagCounts={A:0,B:0,C:0}, lastPick=null;
+
+  function renderDiag(){
+    const d = diagData[diagIndex];
+    diagQEl.textContent = d.q;
+    diagChoicesEl.innerHTML = "";
+    d.choices.forEach(ch=>{
+      const b = document.createElement('button');
+      b.className = 'choice-btn';
+      b.textContent = ch.label;
+      b.onclick = ()=>{
+        diagCounts[ch.type]++; lastPick = ch.type;
+        if(++diagIndex < diagData.length) renderDiag(); else showTypeResult();
+      };
+      diagChoicesEl.appendChild(b);
+    });
+    diagProgEl.textContent = `(${diagIndex+1} / ${diagData.length})`;
+  }
+
+  function showTypeResult(){
+    const max = Math.max(diagCounts.A, diagCounts.B, diagCounts.C);
+    const tied = []; for(const k of ['A','B','C']) if(diagCounts[k]===max) tied.push(k);
+    const main = tied.includes(lastPick) ? lastPick : tied[0];
+
+    const typeTitle = document.getElementById('type-title');
+    const typeCopy  = document.getElementById('type-copy');
+    const typeDesc  = document.getElementById('type-desc'); typeDesc.innerHTML="";
+
+    if(main==='A'){ typeTitle.textContent="冷静分析型"; typeCopy.textContent="「証拠が集まるまで動かない、貝タイプ探偵」";
+      appendLi(typeDesc,"どんな謎もじっくり時間をかけて解決。スピードより正確さ重視！"); }
+    else if(main==='B'){ typeTitle.textContent="情報収集型"; typeCopy.textContent="「噂とWi-Fiはすぐ拾う、アンテナ探偵」";
+      appendLi(typeDesc,"情報は命！人脈とネット検索で謎を丸裸にするタイプ。"); }
+    else { typeTitle.textContent="マイペース型"; typeCopy.textContent="「謎より昼寝優先、スローライフ探偵」";
+      appendLi(typeDesc,"焦らずマイペースに動くが、ひらめきは誰よりも鋭い。"); }
+
+    show(screenDiagResult);
+  }
+  function appendLi(ul, text){ const li=document.createElement('li'); li.textContent=text; ul.appendChild(li); }
+
+  document.getElementById('to-quiz').addEventListener('click', ()=>{ quizIndex=0; renderQuiz(); show(screenQuiz); });
+
+  // ===== 本編（不正解では進まない／正解で解説→次へ） =====
+  const quiz = [
+    {
+      story: "🕵️‍♀️ 第1の謎：謎のリーダーはだれ？<br>とうせい病院の院長・福岡先生。24時間ずっと病院にいるわけではありません。<br>でも、夜間や休日に急なトラブルが起きたら…？そのとき、院長の代わりに病院全体を指揮する謎の人物がいるらしい・・・<br>あなたは、その人物の正体を突き止める。<br>副院長でも、看護局長でも、事務長でもない。<br>でも夜や休日は“病院の顔”になるこの人物は、誰だ？",
+      title: "次の4つの中から正しいものを選びましょう。",
+      choices: [
+        {label:"内科直", correct:true},
+        {label:"外科直", correct:false},
+        {label:"当直師長", correct:false},
+        {label:"ERリーダー", correct:false}
+      ],
+      explain: [
+        "夜間・休日は内科直が病院全体の指揮を取る。",
+        "手術や外科系トラブルは必要に応じて外科直と連携。",
+        "看護・事務も当直体制があり、全職種でカバーしている。"
+      ]
+    },
+    {
+      story: "🕵️‍♀️ 第2の謎：謎のリーダーを突き止めたあなたは内科直の机の上に謎のメモを発見した<br>「朝になって外来が開くまで頑張るぞ、、、あれ？外来受付の機械って何時からだっけ・・・」<br>院内のスケジュールを知っていれば、この答えはすぐにわかるはずだ。",
+      title: "外来受付の機械が起動する時刻は次のうちどれ？",
+      choices: [
+        {label:"7:45", correct:false},
+        {label:"8:00", correct:false},
+        {label:"8:15", correct:true},
+        {label:"8:30", correct:false}
+      ],
+      explain: [
+        "外来受付の自動機械は8:15に起動。",
+        "機械の稼働時間を知っていると、患者対応や案内がスムーズにできる。"
+      ]
+    },
+    {
+      story: "🕵️‍♀️ 第3の謎：8:15に現れたメッセージ<br>あなたは外来受付の機械が8:15に起動する瞬間を見届けた。<br>すると、画面に一瞬だけこんな文字が表示された――<br>「12月・院内チーム・TMC」<br>これは一体何を指しているのか？",
+      title: "正しいものを選びましょう。",
+      choices: [
+        {label:"東生マラソンチャレンジ", correct:false},
+        {label:"とうせいメディカルカップ", correct:true},
+        {label:"陶生メディカルコンサート", correct:false},
+        {label:"東京ミステリークイズ", correct:false}
+      ],
+      explain: [
+        "TMCは「とうせいメディカルカップ」の略。",
+        "院内の多職種チームが競い合う、12月恒例のイベント。",
+        "知識・技能・チームワークが試される病院行事。"
+      ]
+    }
+  ];
+  let quizIndex = 0;
+
+  // 画像ファイル名（問題に対応）
+  const quizImages = ["nazo1.png", "nazo2.png", "nazo3.png"];
+
+  function renderQuiz(){
+    const q = quiz[quizIndex];
+
+    // 説明・画像・選択肢をセット
+    storyEl.innerHTML = q.story;
+
+    quizImgEl.src = quizImages[quizIndex];
+    quizImgEl.alt = `第${quizIndex+1}の謎`;
+
+    qTitleEl.textContent = q.title;
+    choicesEl.innerHTML = ""; judgeEl.textContent = "";
+    explainEl.style.display = "none"; explainEl.innerHTML = "";
+    nextArea.style.display = "none";
+
+    q.choices.forEach(c=>{
+      const b = document.createElement('button');
+      b.className = 'choice-btn';
+      b.textContent = c.label;
+      b.onclick = ()=>judge(c.correct);
+      choicesEl.appendChild(b);
+    });
+  }
+
+  function showStamp(){ stampEl.style.display='flex'; setTimeout(()=>{ stampEl.style.display='none'; }, 700); }
+
+  function judge(isCorrect){
+    if(isCorrect){
+      judgeEl.textContent = "正解！";
+      judgeEl.className = "result ok";
+      try{ seCorrect.currentTime = 0; seCorrect.play(); }catch{}
+      showStamp();
+
+      // 解説を表示して「次へ」ボタンを出す
+      const q = quiz[quizIndex];
+      explainEl.innerHTML = "<strong>解説</strong><ul style='margin:6px 0 0; padding-left:18px;'>" +
+        q.explain.map(t=>`<li>${t}</li>`).join("") + "</ul>";
+      explainEl.style.display = "block";
+      nextArea.style.display = "block";
+
+    }else{
+      judgeEl.textContent = "残念！もう一度選んでみよう。";
+      judgeEl.className = "result ng";
+      // 不正解では進まない
+    }
+  }
+
+  // 紙吹雪生成
+  function launchConfetti(){
+    confettiEl.innerHTML = "";
+    const colors = ["#ff7ac6","#ffd166","#7bdff2","#c3f0ca","#b5b0ff"];
+    for(let i=0;i<40;i++){
+      const s = document.createElement('span');
+      const size = 8 + Math.random()*10;
+      s.style.width = `${size}px`;
+      s.style.height = `${size*1.6}px`;
+      s.style.left = `${Math.random()*100}%`;
+      s.style.background = colors[Math.floor(Math.random()*colors.length)];
+      s.style.animationDelay = `${Math.random()*0.8}s`;
+      s.style.opacity = 0.8 + Math.random()*0.2;
+      confettiEl.appendChild(s);
+    }
+  }
+  // スパークル生成
+  function launchSparkles(){
+    sparklesEl.innerHTML = "";
+    for(let i=0;i<18;i++){
+      const sp = document.createElement('div');
+      sp.className = 'spark';
+      sp.style.left = `${Math.random()*100}%`;
+      sp.style.top  = `${Math.random()*100}%`;
+      sp.style.animationDelay = `${Math.random()*1.2}s`;
+      sparklesEl.appendChild(sp);
+    }
+  }
+
+  // 次へ（スクロール先頭）
+  nextBtn.addEventListener('click', ()=>{
+    if(++quizIndex < quiz.length){
+      renderQuiz();
+      window.scrollTo({top:0, behavior:'smooth'});
+    }else{
+      const nm = nameEl.value.trim() || "名探偵";
+      endingText.innerHTML = `<strong>${nm}探偵、ありがとう！</strong><br>君は本当に名探偵かもしれない…。<br>次の謎でまた会おう。`;
+      show(screenEnding);
+      launchConfetti();
+      launchSparkles();
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+  });
+
+  // もう一度あそぶ
+  replayBtn.addEventListener('click', ()=>{
+    quizIndex = 0;
+    confettiEl.innerHTML = "";
+    sparklesEl.innerHTML = "";
+    show(screenIntro);
+  });
+
+  // ===== BGMをユーザー操作後に開始 =====
+  document.getElementById('begin-diag').addEventListener('click', ()=>{
+    if(!bgmStarted){
+      bgmStarted = true;
+      try{ bgm.volume = 0.8; bgm.play(); }catch{}
+    }
+  });
+</script>
+</body>
+</html>
+
