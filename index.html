@@ -165,11 +165,11 @@
       <div class="form-vertical">
         <div>
           <label for="name">名前</label>
-          <input id="name" type="text" placeholder="例）まめお" />
+          <input id="name" type="text" placeholder="例）フルネーム" />
         </div>
         <div>
           <label for="group">所属</label>
-          <input id="group" type="text" placeholder="例）外来／病棟／リハ など" />
+          <input id="group" type="text" placeholder="例）外来／〇〇病棟／リハ など" />
         </div>
         <div>
           <label for="job">職種</label>
@@ -271,8 +271,41 @@
   <audio id="seClear" src="seikou.mp3" preload="auto"></audio>
 
 <script>
+  /* =========================
+     Googleフォーム 送信設定
+     ========================= */
+ // Googleフォーム送信設定
+/* =========================
+   Googleフォーム 送信設定
+   ========================= */
+const GOOGLE_FORM_ACTION =
+  "https://docs.google.com/forms/d/e/1FAIpQLScQr9B23e6CuPFflnEQDi7Rj8APVpUps4qmR2NuUYkPViABtw/formResponse";
+
+const ENTRY_NAME = "entry.671897270";   // 名前
+const ENTRY_DEPT = "entry.278938549";   // 所属
+const ENTRY_JOB  = "entry.691760735";   // 職種
+
+// Googleフォーム送信関数（no-cors）
+function sendToGoogleForm({ name, dept, job }) {
+  try {
+    const fd = new FormData();
+    fd.append(ENTRY_NAME, name || "");
+    fd.append(ENTRY_DEPT, dept || "");
+    fd.append(ENTRY_JOB,  job || "");
+    fetch(GOOGLE_FORM_ACTION, { method: "POST", body: fd, mode: "no-cors" })
+      .then(() => { console.log("✅ Googleフォームに送信しました"); })
+      .catch(err => { console.warn("⚠️ 送信エラー（ネットワーク）:", err); });
+  } catch (e) {
+    console.warn("⚠️ 送信エラー（例外）:", e);
+  }
+}
+
+
   // ===== DOM =====
   const nameEl  = document.getElementById('name');
+  const groupEl = document.getElementById('group');
+  const jobEl   = document.getElementById('job');
+
   const screenIntro = document.getElementById('screen-intro');
   const screenPre   = document.getElementById('screen-pre');
   const screenDiag  = document.getElementById('screen-diag');
@@ -341,12 +374,19 @@
   function show(el){ hideAll(); el.style.display='block'; window.scrollTo({top:0, behavior:'smooth'}); }
   show(screenIntro);
 
-  // Intro -> Pre
+  // Intro -> Pre（ここでGoogleフォームに送信）
   document.getElementById('go-pre').addEventListener('click', ()=>{
     if(!nameEl.value.trim()){ nameEl.focus(); nameEl.style.borderColor='#ff8dc7'; return; }
     nameEl.style.borderColor='#ffdff0';
     preTitle.textContent = `とうせいの謎に迫る${nameEl.value}探偵「あなたはどんなタイプの名探偵？」`;
     show(screenPre);
+
+    // ★ Googleフォーム送信（入力値をそのまま送る）
+    sendToGoogleForm({
+      name: nameEl.value,
+      dept: groupEl.value,
+      job:  jobEl.value
+    });
   });
 
   // Pre -> Diagnosis
@@ -684,4 +724,3 @@
 </script>
 </body>
 </html>
-
